@@ -1,0 +1,5 @@
+Python3 script to stress test Bluetooth clasic devices. It uses l2ping to deauth devices. It will loop and find devies not excluded in the mac list, then will send 700 ping requests. Works on most devices that support bluetooth. Please use only for testing. Will not work if bluetooth device is already paired. This Will NOT work on BLE. JS
+Install: 
+pip install pybluez 
+sudo apt-get install bluetooth libbluetooth-dev
+Use: sudo python3 blue_gender.py
