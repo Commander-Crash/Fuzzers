@@ -1,15 +1,38 @@
 
+# By Commander Crash of 29A Society
+# Infra Dread v0.2
+
 import random
 import time
 import argparse
 import RPi.GPIO as GPIO
+
+# Suppress GPIO warnings
+GPIO.setwarnings(False)
+
+RED = "\033[91m"  # Red color
+GREEN = "\033[92m"  # Green color
+WHITE = "\033[0m"  # White color (reset)
+
+# Message of the Day (motd) in red
+motd = f"""{RED}
+
+  _____        __                  _____                     _ 
+ |_   _|      / _|                |  __ \                   | |
+   | |  _ __ | |_ _ __ __ _ ______| |  | |_ __ ___  __ _  __| |
+   | | | '_ \|  _| '__/ _` |______| |  | | '__/ _ \/ _` |/ _` |
+  _| |_| | | | | | | | (_| |      | |__| | | |  __/ (_| | (_| |
+ |_____|_| |_|_| |_|  \__,_|      |_____/|_|  \___|\__,_|\__,_|
+                                                               
+{WHITE}"""
+print(motd)
 
 GPIO.setmode(GPIO.BCM)
 transmit_pin = 17
 GPIO.setup(transmit_pin, GPIO.OUT)
 
 def send_ir_code(code, code_length, header_pulse, header_space, one_pulse, one_space, zero_pulse, zero_space, ptrail, gap):
-    print(f"Sending IR code: {code:X}")
+    print(f"{GREEN}Sending IR code: 0x{code:0{code_length//4}X}{WHITE}")
 
     def send_pulse_pwm(duration_us):
         pwm.ChangeDutyCycle(duty_cycle)
@@ -34,8 +57,26 @@ def send_ir_code(code, code_length, header_pulse, header_space, one_pulse, one_s
     send_pulse_pwm(ptrail)
     time.sleep(gap / 1000000.0)
 
+def count_up_from_hex(starting_code, preamble_code, preamble_length, header_pulse, header_space, one_pulse, one_space, zero_pulse, zero_space, ptrail, gap):
+    code = int(starting_code, 16)
+    code_length = len(bin(code)) - 2
+    try:
+        while True:
+            send_preamble_and_code(preamble_code, code, preamble_length, code_length,
+                                   header_pulse, header_space, one_pulse, one_space,
+                                   zero_pulse, zero_space, ptrail, gap)
+            time.sleep(0.2)
+            code += 1
+    except KeyboardInterrupt:
+        print("\nExiting the script.")
+
+def send_preamble_and_code(preamble_code, code, preamble_length, code_length, header_pulse, header_space, one_pulse, one_space, zero_pulse, zero_space, ptrail, gap):
+    if preamble_code is not None:
+        send_ir_code(preamble_code, preamble_length, header_pulse, header_space, one_pulse, one_space, zero_pulse, zero_space, ptrail, gap)
+    send_ir_code(code, code_length, header_pulse, header_space, one_pulse, one_space, zero_pulse, zero_space, ptrail, gap)
+
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Send IR codes in sequence or random mode.")
+    parser = argparse.ArgumentParser(description="Send IR codes in sequence, random, or count-up mode.")
     parser.add_argument("-l", "--length", type=int, default=32, help="Number of bits for the IR codes (default: 32).")
     parser.add_argument("-r", "--random", action="store_true", help="Enable random mode (default is counting-up).")
     parser.add_argument("-m", "--code", type=str, help="IR code to send in hex format (e.g., 0x02A1).")
@@ -51,6 +92,7 @@ if __name__ == "__main__":
     parser.add_argument("--gap", type=int, default=64729, help="Gap duration (microseconds, default: 64729).")
     parser.add_argument("--frequency", type=int, default=38000, help="Carrier frequency (Hz, default: 38000).")
     parser.add_argument("--duty", type=float, default=50.0, help="Duty cycle for the PWM signal (default: 50.0).")
+    parser.add_argument("-sl", "--start_from", type=str, help="Start counting up from the specified hex code.")
     args = parser.parse_args()
 
     pwm_frequency = args.frequency  # Assign the frequency from the arguments
@@ -59,61 +101,48 @@ if __name__ == "__main__":
     pwm = GPIO.PWM(transmit_pin, pwm_frequency)
     pwm.start(duty_cycle)
 
-    def send_preamble_and_code(preamble_code, code, preamble_length, code_length, header_pulse, header_space, one_pulse, one_space, zero_pulse, zero_space, ptrail, gap):
-        send_ir_code(preamble_code, preamble_length, header_pulse, header_space, one_pulse, one_space, zero_pulse, zero_space, ptrail, gap)
-        send_ir_code(code, code_length, header_pulse, header_space, one_pulse, one_space, zero_pulse, zero_space, ptrail, gap)
-
-    if args.preamble:
-        preamble_code = int(args.preamble, 16)
-        preamble_length = len(bin(preamble_code)) - 2
-
-    if args.code:
-        code = int(args.code, 16)
-        code_length = len(bin(code)) - 2
-        try:
-            for _ in range(args.repeat):
-                if args.preamble:
-                    send_preamble_and_code(preamble_code, code, preamble_length, code_length,
-                                           args.header_pulse, args.header_space, args.one_pulse, args.one_space,
-                                           args.zero_pulse, args.zero_space, args.ptrail, args.gap)
-                else:
-                    send_ir_code(code, code_length, args.header_pulse, args.header_space, args.one_pulse, args.one_space,
-                                 args.zero_pulse, args.zero_space, args.ptrail, args.gap)
-        except KeyboardInterrupt:
-            print("\nExiting the script.")
-
-    elif args.random:
-        num_codes = 100000000
-        try:
-            for _ in range(num_codes):
-                random_code = random.getrandbits(args.length)
-                for _ in range(args.repeat):
-                    if args.preamble:
-                        send_preamble_and_code(preamble_code, random_code, preamble_length, args.length,
-                                               args.header_pulse, args.header_space, args.one_pulse, args.one_space,
-                                               args.zero_pulse, args.zero_space, args.ptrail, args.gap)
-                    else:
-                        send_ir_code(random_code, args.length, args.header_pulse, args.header_space, args.one_pulse,
-                                     args.one_space, args.zero_pulse, args.zero_space, args.ptrail, args.gap)
-                    time.sleep(0.2)
-        except KeyboardInterrupt:
-            print("\nExiting the script.")
-
+    if args.start_from:
+        if args.random or args.code or args.length > 32:
+            print("Error: -sl cannot be used in combination with -r, -m, or -l > 32.")
+        else:
+            preamble_code = int(args.preamble, 16) if args.preamble else None
+            preamble_length = len(bin(preamble_code)) - 2 if args.preamble else None
+            count_up_from_hex(args.start_from, preamble_code, preamble_length,
+                              args.header_pulse, args.header_space, args.one_pulse, args.one_space,
+                              args.zero_pulse, args.zero_space, args.ptrail, args.gap)
     else:
-        num_codes = 10000000
-        try:
-            for i in range(1, num_codes + 1):
-                for _ in range(args.repeat):
-                    if args.preamble:
-                        send_preamble_and_code(preamble_code, i, preamble_length, args.length,
-                                               args.header_pulse, args.header_space, args.one_pulse, args.one_space,
-                                               args.zero_pulse, args.zero_space, args.ptrail, args.gap)
-                    else:
-                        send_ir_code(i, args.length, args.header_pulse, args.header_space, args.one_pulse, args.one_space,
-                                     args.zero_pulse, args.zero_space, args.ptrail, args.gap)
-                    time.sleep(0.2)
-        except KeyboardInterrupt:
-            print("\nExiting the script.")
+        if args.random:
+            num_codes = 100000000
+            try:
+                for _ in range(num_codes):
+                    random_code = random.getrandbits(args.length)
+                    for _ in range(args.repeat):
+                        if args.preamble:
+                            send_preamble_and_code(int(args.preamble, 16), random_code, len(bin(args.length)) - 2, args.length,
+                                                   args.header_pulse, args.header_space, args.one_pulse, args.one_space,
+                                                   args.zero_pulse, args.zero_space, args.ptrail, args.gap)
+                        else:
+                            send_ir_code(random_code, args.length, args.header_pulse, args.header_space, args.one_pulse,
+                                         args.one_space, args.zero_pulse, args.zero_space, args.ptrail, args.gap)
+                        time.sleep(0.2)
+            except KeyboardInterrupt:
+                print("\nExiting the script.")
+
+        else:
+            num_codes = 10000000
+            try:
+                for i in range(1, num_codes + 1):
+                    for _ in range(args.repeat):
+                        if args.preamble:
+                            send_preamble_and_code(int(args.preamble, 16), i, len(bin(args.length)) - 2, args.length,
+                                                   args.header_pulse, args.header_space, args.one_pulse, args.one_space,
+                                                   args.zero_pulse, args.zero_space, args.ptrail, args.gap)
+                        else:
+                            send_ir_code(i, args.length, args.header_pulse, args.header_space, args.one_pulse, args.one_space,
+                                         args.zero_pulse, args.zero_space, args.ptrail, args.gap)
+                        time.sleep(0.2)
+            except KeyboardInterrupt:
+                print("\nExiting the script.")
 
     pwm.stop()
     GPIO.cleanup()
