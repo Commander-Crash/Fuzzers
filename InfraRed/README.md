@@ -9,7 +9,7 @@ How to Use the IR Script:
 
     Connect IR Transmitter:
     Before using the script, you need to connect an IR transmitter to one of the GPIO pins of the Raspberry Pi. 
-    The script assumes that you have connected the IR transmitter to GPIO pin 17, but you can modify the transmit_pin variable in the script to match your wiring                  configuration.
+    The script assumes that you have connected the IR transmitter to GPIO pin 17, but you can modify the transmit_pin variable in the script to match your wiring configuration.
 
     Command Line Arguments:
     The script can be run from the command line with various arguments to control its behavior. Here are the available arguments:
@@ -17,7 +17,7 @@ How to Use the IR Script:
         -r, --random: Enable random mode (default is counting-up).
         -m, --code: Send a specific IR code in hex format (e.g., 0x02A1).
         -x, --repeat: Number of times to repeat sending the code. Default is 1.
-        --header_pulse, --header_space, --one_pulse, --one_space, --zero_pulse, --zero_space, --ptrail, --gap: Customize the duration of various IR signal components (in              microseconds).
+        --header_pulse, --header_space, --one_pulse, --one_space, --zero_pulse, --zero_space, --ptrail, --gap: Customize the duration of various IR signal components (in microseconds).
         --frequency: Carrier frequency for the IR signals (in Hz). Default is 38000 Hz.
         --duty: Duty cycle for the PWM signal (default: 50.0).
 
