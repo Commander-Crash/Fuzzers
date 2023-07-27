@@ -37,3 +37,6 @@ Pre-data Code:
 If your IR protocol requires a pre-data code, you can include it using the -p argument followed by the desired hex code. For example:
     python IR_script.py -p 0xA25D -m 0x7E000000
 
+For Black and decker fan brute force:
+    python IR_script.py --header_pulse 1271 --header_space 402 --one_pulse 1272 --one_space 429 --zero_pulse 413 --zero_space 1260 --ptrail 1245 --gap 429--header_pulse 1271 --header_space 402 --one_pulse 1272 --one_space 429 --zero_pulse 413 --zero_space 1260 --ptrail 1245 --gap 429 --frequency 38000 -r -l 16
+
