@@ -1,43 +1,82 @@
 
-##  Infra-Dread                                                             
+##  Infra-Dread   V0.2                                                          
 
-                                                              
+infra-dread.py
 
-The IR script is a Python script designed to send IR codes using a Raspberry Pi and its GPIO pins. It allows you to send individual IR codes or a sequence of random IR codes. The script uses Raspberry Pi 4 GPIO library, RPi.GPIO, to control the GPIO pins for generating the IR signals.
-GPIO 17 is set for transmitter can be changed in script.
-How to Use the IR Script:
+infra-dread.py is a Python script designed for Raspberry Pi to send infrared (IR) codes using a connected IR transmitter. The script allows you to send specific IR codes in sequence, randomize the codes, or count up from a given starting code. It provides flexibility in customizing the header pulse, header space, one pulse, one space, zero pulse, zero space, pulse trail, and gap durations, enabling compatibility with a wide range of IR devices.
+How to Use:
 
-    Connect IR Transmitter:
-    Before using the script, you need to connect an IR transmitter to one of the GPIO pins of the Raspberry Pi. 
-    The script assumes that you have connected the IR transmitter to GPIO pin 17, but you can modify the transmit_pin variable in the script to match your wiring configuration.
+    Hardware Setup:
+        Connect an IR transmitter to the Raspberry Pi GPIO pin (specified in the transmit_pin variable) that supports hardware PWM.
+        Make sure you have the necessary hardware and wiring connections to send IR signals successfully.
 
-    Command Line Arguments:
-    The script can be run from the command line with various arguments to control its behavior. Here are the available arguments:
-        -l, --length: The number of bits for the IR codes. Default is 32.
-        -r, --random: Enable random mode (default is counting-up).
-        -m, --code: Send a specific IR code in hex format (e.g., 0x02A1).
-        -x, --repeat: Number of times to repeat sending the code. Default is 1.
-        --header_pulse, --header_space, --one_pulse, --one_space, --zero_pulse, --zero_space, --ptrail, --gap: Customize the duration of various IR signal components (in microseconds).
-        --frequency: Carrier frequency for the IR signals (in Hz). Default is 38000 Hz.
-        --duty: Duty cycle for the PWM signal (default: 50.0).
+    Install Dependencies:
+        Before using the script, ensure that the required packages are installed on your Raspberry Pi.
+        The script relies on the RPi.GPIO library, which should be pre-installed on most Raspberry Pi systems. If it's not already installed, you can install it using the following command:
 
-    Sending Fixed IR Code:
-    To send a specific IR code, use the -m or --code argument followed by the desired hex code. For example:
-    python Infra-Dread.py -m 0x7E000000
+    bash
 
-Sending Random IR Codes:
-To send random IR codes, use the -r or --random argument. By default, it will send 100 million random codes. You can modify the number of random codes sent with the -x or --repeat argument. For example:
-    python Infra-Dread.py -r -x 10
+sudo apt-get update
+sudo apt-get install python3-rpi.gpio
 
-Customize IR Signal Parameters:
-You can customize the duration of various components of the IR signal using the --header_pulse, --header_space, --one_pulse, --one_space, --zero_pulse, --zero_space, --ptrail, and --gap arguments. 
-Look at a LIRC conf file to get the info for remote needed. For example:
-    python Infra-Dread.py --header_pulse 4500 --header_space 4500 --one_pulse 600 --one_space 1600 --zero_pulse 600 --zero_space 500 --ptrail 600 --gap 40000
+Run the Script:
 
-Pre-data Code:
-If your IR protocol requires a pre-data code, you can include it using the -p argument followed by the desired hex code. For example:
-    python Infra-Dread.py -p 0xA25D -m 0x7E000000
+    Save the script as infra-dread.py on your Raspberry Pi.
+    Open a terminal and navigate to the directory containing the script.
+    To view available options, run:
 
-For Black and decker fan brute force:
-    python Infra-Dread.py --header_pulse 1271 --header_space 402 --one_pulse 1272 --one_space 429 --zero_pulse 413 --zero_space 1260 --ptrail 1245 --gap 429--header_pulse 1271 --header_space 402 --one_pulse 1272 --one_space 429 --zero_pulse 413 --zero_space 1260 --ptrail 1245 --gap 429 --frequency 38000 -r -l 16
+bash
+
+python3 infra-dread.py -h
+
+    Usage examples:
+
+bash
+
+    # Send a specific IR code
+    python3 infra-dread.py -m 0x02A1
+
+    # Send a specific IR code with a fixed preamble
+    python3 infra-dread.py -p 0x7FFFF -m 0x02A1
+
+    # Send a random IR code 10 times
+    python3 infra-dread.py -r -x 10
+
+    # Count up from a specific IR code
+    python3 infra-dread.py -sl 0x1111
+
+Command Line Arguments:
+
+    -h, --help: Display help information and available arguments.
+    -l, --length: Number of bits for the IR codes (default: 32).
+    -r, --random: Enable random mode (default is counting-up).
+    -m, --code: IR code to send in hex format (e.g., 0x02A1).
+    -p, --preamble: Fixed preamble IR code to send in hex format (e.g., 0x7FFFF).
+    -x, --repeat: Number of times to repeat sending the code (default: 1).
+    --header_pulse: Header pulse duration in microseconds (default: 4058).
+    --header_space: Header space duration in microseconds (default: 3964).
+    --one_pulse: One pulse duration in microseconds (default: 514).
+    --one_space: One space duration in microseconds (default: 1980).
+    --zero_pulse: Zero pulse duration in microseconds (default: 514).
+    --zero_space: Zero space duration in microseconds (default: 981).
+    --ptrail: Pulse trail duration in microseconds (default: 514).
+    --gap: Gap duration in microseconds (default: 64729).
+    --frequency: Carrier frequency in Hz (default: 38000).
+    --duty: Duty cycle for the PWM signal (default: 50.0).
+    -sl, --start_from: Start counting up from the specified hex code.
+
+Notes:
+
+    The script is designed for Raspberry Pi with an IR transmitter connected to the specified GPIO pin pin 17 (change the transmit_pin variable if necessary).
+    Ensure that the GPIO pin supports hardware PWM for accurate IR transmission.
+    For successful IR transmission, configure the duration of the header pulse, header space, one pulse, one space, zero pulse, zero space, pulse trail, and gap according to the requirements of the target IR device. You can take a look at a lirc.conf for all vaules for arguments like header gap pulse etc....
+    Use the appropriate options to send specific IR codes, randomize codes, or count up from a given starting code.
+    The script does not require any additional Python packages beyond the standard RPi.GPIO library.
+
+License:
+
+This script is provided under the MIT License. Feel free to use, modify, and distribute it as per the terms of the MIT License.
+Author:
+
+The script is developed by Commander Crash of 29A Society
 
