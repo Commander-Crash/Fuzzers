@@ -1,7 +1,6 @@
 
 # By Commander Crash of 29A Society
 # Infra Dread v0.2
-
 import random
 import time
 import argparse
@@ -102,8 +101,8 @@ if __name__ == "__main__":
     pwm.start(duty_cycle)
 
     if args.start_from:
-        if args.random or args.code or args.length > 32:
-            print("Error: -sl cannot be used in combination with -r, -m, or -l > 32.")
+        if args.random or args.length > 32:
+            print("Error: -sl cannot be used in combination with -r or -l > 32.")
         else:
             preamble_code = int(args.preamble, 16) if args.preamble else None
             preamble_length = len(bin(preamble_code)) - 2 if args.preamble else None
@@ -111,7 +110,23 @@ if __name__ == "__main__":
                               args.header_pulse, args.header_space, args.one_pulse, args.one_space,
                               args.zero_pulse, args.zero_space, args.ptrail, args.gap)
     else:
-        if args.random:
+        if args.code:
+            code = int(args.code, 16)
+            code_length = len(bin(code)) - 2
+            try:
+                if args.repeat == 0:
+                    while True:
+                        send_ir_code(code, code_length, args.header_pulse, args.header_space, args.one_pulse, args.one_space,
+                                     args.zero_pulse, args.zero_space, args.ptrail, args.gap)
+                        time.sleep(0.2)
+                else:
+                    for _ in range(args.repeat):
+                        send_ir_code(code, code_length, args.header_pulse, args.header_space, args.one_pulse, args.one_space,
+                                     args.zero_pulse, args.zero_space, args.ptrail, args.gap)
+                        time.sleep(0.2)
+            except KeyboardInterrupt:
+                print("\nExiting the script.")
+        elif args.random:
             num_codes = 100000000
             try:
                 for _ in range(num_codes):
@@ -127,7 +142,6 @@ if __name__ == "__main__":
                         time.sleep(0.2)
             except KeyboardInterrupt:
                 print("\nExiting the script.")
-
         else:
             num_codes = 10000000
             try:
