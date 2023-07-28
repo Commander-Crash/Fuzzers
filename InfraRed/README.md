@@ -32,7 +32,7 @@ python3 infra-dread.py --header_pulse 4058 --header_space 3964 --one_pulse 514 -
 
 
 Command Line Arguments:
-
+```
 usage: infra-dread.py [-h] [-l LENGTH] [-r] [-m CODE] [-p PREAMBLE]
                       [-x REPEAT] [--header_pulse HEADER_PULSE]
                       [--header_space HEADER_SPACE] [--one_pulse ONE_PULSE]
@@ -73,6 +73,7 @@ optional arguments:
   --duty DUTY           Duty cycle for the PWM signal (default: 50.0).
   -sl START_FROM, --start_from START_FROM
                         Start counting up from the specified hex code.
+```
 
 Exsample for onn lcd: python3 infra-dread.py --header_pulse 4058 --header_space 3964 --one_pulse 514 --one_space 1980 --zero_pulse 514 --zero_space 981 --ptrail 514 --gap 64729 --duty 90 --frequency 38000 -l 24 -r <--This will bruteforce 24bits on a onn lcd tv using random codes
 
