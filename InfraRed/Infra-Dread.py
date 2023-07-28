@@ -1,5 +1,5 @@
 # By Commander Crash of 29A Society
-# Infra Dread v0.2
+# Infra Dread v0.3
 import random
 import time
 import argparse
@@ -58,13 +58,21 @@ def send_ir_code(code, code_length, header_pulse, header_space, one_pulse, one_s
 def count_up_from_hex(starting_code, preamble_code, preamble_length, header_pulse, header_space, one_pulse, one_space, zero_pulse, zero_space, ptrail, gap):
     code = int(starting_code, 16)
     code_length = len(bin(code)) - 2
+    tried_codes = set()
+    total_possible_codes = 2 ** code_length
+
     try:
-        while True:
-            send_preamble_and_code(preamble_code, code, preamble_length, code_length,
-                                   header_pulse, header_space, one_pulse, one_space,
-                                   zero_pulse, zero_space, ptrail, gap)
-            time.sleep(0.2)
+        while len(tried_codes) < total_possible_codes:
+            if code not in tried_codes:
+                send_preamble_and_code(preamble_code, code, preamble_length, code_length,
+                                       header_pulse, header_space, one_pulse, one_space,
+                                       zero_pulse, zero_space, ptrail, gap)
+                time.sleep(0.2)
+                tried_codes.add(code)
+
             code += 1
+            if code >= total_possible_codes:
+                code = 0
     except KeyboardInterrupt:
         print("\nExiting the script.")
 
@@ -134,28 +142,28 @@ if __name__ == "__main__":
             except KeyboardInterrupt:
                 print("\nExiting the script.")
         elif args.random:
-            num_codes = 100000000
+            num_codes = 2 ** args.length
+            all_codes = list(range(num_codes))
+            random.shuffle(all_codes)
             try:
                 while repetition_counter < args.repeat or args.repeat == 0:  # Repeat until the specified count is reached or args.repeat is 0
-                    for _ in range(num_codes):
-                        random_code = random.getrandbits(args.length)
+                    for code in all_codes:
                         for _ in range(args.repeat):
                             if args.preamble:
-                                send_preamble_and_code(int(args.preamble, 16), random_code, len(bin(args.length)) - 2, args.length,
+                                send_preamble_and_code(int(args.preamble, 16), code, len(bin(args.length)) - 2, args.length,
                                                        args.header_pulse, args.header_space, args.one_pulse, args.one_space,
                                                        args.zero_pulse, args.zero_space, args.ptrail, args.gap)
                             else:
-                                send_ir_code(random_code, args.length, args.header_pulse, args.header_space, args.one_pulse,
+                                send_ir_code(code, args.length, args.header_pulse, args.header_space, args.one_pulse,
                                              args.one_space, args.zero_pulse, args.zero_space, args.ptrail, args.gap)
                             time.sleep(0.2)
                         repetition_counter += 1  # Increment the repetition counter for finite repetitions
             except KeyboardInterrupt:
                 print("\nExiting the script.")
         else:
-            num_codes = 10000000
             try:
                 while repetition_counter < args.repeat or args.repeat == 0:  # Repeat until the specified count is reached or args.repeat is 0
-                    for i in range(1, num_codes + 1):
+                    for i in range(1, 2**args.length + 1):
                         for _ in range(args.repeat):
                             if args.preamble:
                                 send_preamble_and_code(int(args.preamble, 16), i, len(bin(args.length)) - 2, args.length,
@@ -165,7 +173,7 @@ if __name__ == "__main__":
                                 send_ir_code(i, args.length, args.header_pulse, args.header_space, args.one_pulse, args.one_space,
                                              args.zero_pulse, args.zero_space, args.ptrail, args.gap)
                             time.sleep(0.2)
-                        repetition_counter += 1  # Increment the repetition counter for finite repetitions
+                            repetition_counter += 1  # Increment the repetition counter for finite repetitions
             except KeyboardInterrupt:
                 print("\nExiting the script.")
 
