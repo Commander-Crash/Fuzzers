@@ -1,6 +1,3 @@
-
-# By Commander Crash of 29A Society
-# Infra Dread v0.2
 import random
 import time
 import argparse
@@ -101,29 +98,31 @@ if __name__ == "__main__":
     pwm.start(duty_cycle)
 
     if args.start_from:
-        if args.random or args.length > 32:
-            print("Error: -sl cannot be used in combination with -r or -l > 32.")
+        if args.random or args.length > 32 or args.code:
+            print("Error: -sl cannot be used in combination with -r, -l > 32, or -m.")
         else:
-            preamble_code = int(args.preamble, 16) if args.preamble else None
-            preamble_length = len(bin(preamble_code)) - 2 if args.preamble else None
-            count_up_from_hex(args.start_from, preamble_code, preamble_length,
-                              args.header_pulse, args.header_space, args.one_pulse, args.one_space,
-                              args.zero_pulse, args.zero_space, args.ptrail, args.gap)
+            if args.preamble:
+                preamble_code = int(args.preamble, 16)
+                preamble_length = len(bin(preamble_code)) - 2
+                count_up_from_hex(args.start_from, preamble_code, preamble_length,
+                                  args.header_pulse, args.header_space, args.one_pulse, args.one_space,
+                                  args.zero_pulse, args.zero_space, args.ptrail, args.gap)
+            else:
+                print("Error: -sl requires -p to be specified.")
     else:
         if args.code:
             code = int(args.code, 16)
             code_length = len(bin(code)) - 2
             try:
-                if args.repeat == 0:
-                    while True:
+                for _ in range(args.repeat):
+                    if args.preamble:
+                        send_preamble_and_code(int(args.preamble, 16), code, len(bin(args.length)) - 2, args.length,
+                                               args.header_pulse, args.header_space, args.one_pulse, args.one_space,
+                                               args.zero_pulse, args.zero_space, args.ptrail, args.gap)
+                    else:
                         send_ir_code(code, code_length, args.header_pulse, args.header_space, args.one_pulse, args.one_space,
                                      args.zero_pulse, args.zero_space, args.ptrail, args.gap)
-                        time.sleep(0.2)
-                else:
-                    for _ in range(args.repeat):
-                        send_ir_code(code, code_length, args.header_pulse, args.header_space, args.one_pulse, args.one_space,
-                                     args.zero_pulse, args.zero_space, args.ptrail, args.gap)
-                        time.sleep(0.2)
+                    time.sleep(0.2)
             except KeyboardInterrupt:
                 print("\nExiting the script.")
         elif args.random:
