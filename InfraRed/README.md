@@ -16,11 +16,9 @@ sudo apt-get install python3-rpi.gpio
 
 Run the Script:
 
-    Save the script on your Raspberry Pi. (Only tested with a raspberry pi)
-    Open a terminal and navigate to the directory containing the script.
-    To view available options, run:
-
-python3 infra-dread.py -h
+ Save the script on your Raspberry Pi. (Only tested with a raspberry pi)
+ Open a terminal and navigate to the directory containing the script.
+ To view available options, run:
 
 examples:
 ```
@@ -32,6 +30,7 @@ python3 infra-dread.py --header_pulse 4058 --header_space 3964 --one_pulse 514 -
 
 Command Line Arguments:
 ```
+python3 infra-dread.py -h
 usage: infra-dread.py [-h] [-l LENGTH] [-r] [-m CODE] [-p PREAMBLE]
                       [-x REPEAT] [--header_pulse HEADER_PULSE]
                       [--header_space HEADER_SPACE] [--one_pulse ONE_PULSE]
@@ -90,7 +89,6 @@ LIRC conf file to get info on remote to bruteforce
  ``` 
 
 Notes:
-
     The script is designed for Raspberry Pi with an IR transmitter connected to the specified GPIO pin pin 17 (change the transmit_pin variable if necessary).
     Ensure that the GPIO pin supports hardware PWM for accurate IR transmission.
     For successful IR transmission, configure the duration of the header pulse, header space, one pulse, one space, zero pulse, zero space, pulse trail, and gap according to the requirements of the target IR device. You can take a look at a lirc.conf remote file for all vaules for arguments like header gap pulse etc....
