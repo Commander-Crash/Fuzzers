@@ -120,7 +120,7 @@ if __name__ == "__main__":
             code = int(args.code, 16)
             code_length = len(bin(code)) - 2
             try:
-                for _ in range(args.repeat):
+                while args.repeat == 0 or args.repeat > 0:  # Add condition to handle repeating forever
                     if args.preamble:
                         send_preamble_and_code(int(args.preamble, 16), code, len(bin(args.length)) - 2, args.length,
                                                args.header_pulse, args.header_space, args.one_pulse, args.one_space,
