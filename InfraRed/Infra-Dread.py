@@ -1,8 +1,5 @@
 # By Commander Crash of 29A Society
 # Infra Dread v0.3
-# By Commander Crash of 29A Society
-# Infra Dread v0.3
-
 import random
 import time
 import argparse
