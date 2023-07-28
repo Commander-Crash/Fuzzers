@@ -24,12 +24,12 @@ Run the Script:
 python3 infra-dread.py -h
 
 examples:
-
+```
 for onn lcd: 
 python3 infra-dread.py --header_pulse 4058 --header_space 3964 --one_pulse 514 --one_space 1980 --zero_pulse 514 --zero_space 981 --ptrail 514 --gap 64729 --duty 90 --frequency 38000 -l 24 -r <--This will bruteforce 24bits on a onn lcd tv using random codes
 
 python3 infra-dread.py --header_pulse 4058 --header_space 3964 --one_pulse 514 --one_space 1980 --zero_pulse 514 --zero_space 981 --ptrail 514 --gap 64729 --duty 90 --frequency 38000 -l 24  <--This will bruteforce 24bits on a onn lcd tv counting from 0 and up
-
+```
 
 Command Line Arguments:
 ```
@@ -75,11 +75,9 @@ optional arguments:
                         Start counting up from the specified hex code.
 ```
 
-Exsample for onn lcd: python3 infra-dread.py --header_pulse 4058 --header_space 3964 --one_pulse 514 --one_space 1980 --zero_pulse 514 --zero_space 981 --ptrail 514 --gap 64729 --duty 90 --frequency 38000 -l 24 -r <--This will bruteforce 24bits on a onn lcd tv using random codes
-
-python3 infra-dread.py --header_pulse 4058 --header_space 3964 --one_pulse 514 --one_space 1980 --zero_pulse 514 --zero_space 981 --ptrail 514 --gap 64729 --duty 90 --frequency 38000 -l 24  <--This will bruteforce 24bits on a onn lcd tv counting from 0 and up
 
 LIRC conf file to get info on remote to bruteforce
+```
   bits           24
   flags SPACE_ENC|CONST_LENGTH
   eps            30
@@ -90,7 +88,7 @@ LIRC conf file to get info on remote to bruteforce
   zero          514   981
   ptrail        514
   gap          64729
-  
+ ``` 
 
 Notes:
 
