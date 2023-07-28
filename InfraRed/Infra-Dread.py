@@ -111,7 +111,10 @@ if __name__ == "__main__":
                                   args.header_pulse, args.header_space, args.one_pulse, args.one_space,
                                   args.zero_pulse, args.zero_space, args.ptrail, args.gap)
             else:
-                print("Error: -sl requires -p to be specified.")
+                print("Warning: -sl is specified without -p. The preamble will be ignored.")
+                count_up_from_hex(args.start_from, None, None,
+                                  args.header_pulse, args.header_space, args.one_pulse, args.one_space,
+                                  args.zero_pulse, args.zero_space, args.ptrail, args.gap)
     else:
         if args.code:
             code = int(args.code, 16)
