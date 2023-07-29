@@ -10,10 +10,10 @@ Hardware Setup:
 Install Dependencies:
         Before using the script, ensure that the required packages are installed on your Raspberry Pi.
         The script relies on the RPi.GPIO library, which should be pre-installed on most Raspberry Pi systems. If it's not already installed, you can install it using the following command:
-
+```
 sudo apt-get update
 sudo apt-get install python3-rpi.gpio
-
+```
 Run the Script:
 
  Save the script on your Raspberry Pi. (Only tested with a raspberry pi)
