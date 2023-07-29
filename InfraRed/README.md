@@ -20,13 +20,6 @@ Run the Script:
  Open a terminal and navigate to the directory containing the script.
  To view available options, run:
 
-examples:
-```
-for onn lcd: 
-python3 infra-dread.py --header_pulse 4058 --header_space 3964 --one_pulse 514 --one_space 1980 --zero_pulse 514 --zero_space 981 --ptrail 514 --gap 64729 --duty 90 --frequency 38000 -l 24 -r <--This will bruteforce 24bits on a onn lcd tv using random codes
-
-python3 infra-dread.py --header_pulse 4058 --header_space 3964 --one_pulse 514 --one_space 1980 --zero_pulse 514 --zero_space 981 --ptrail 514 --gap 64729 --duty 90 --frequency 38000 -l 24  <--This will bruteforce 24bits on a onn lcd tv counting from 0 and up
-```
 
 Command Line Arguments:
 ```
