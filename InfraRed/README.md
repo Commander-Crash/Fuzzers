@@ -87,6 +87,9 @@ LIRC conf file to get info on remote to bruteforce
   ptrail        514
   gap          64729
  ``` 
+So command will be :: ## python3 infra-dread.py --header_pulse 4058 --header_space 3964 --one_pulse 514 --one_space 1980 --zero_pulse 514 --zero_space 981 --ptrail 514 --gap 64729 -l 24
+or
+python3 infra-dread.py --header_pulse 4058 --header_space 3964 --one_pulse 514 --one_space 1980 --zero_pulse 514 --zero_space 981 --ptrail 514 --gap 64729 -r -l 24
 
 Notes:
     The script is designed for Raspberry Pi with an IR transmitter connected to the specified GPIO pin pin 17 (change the transmit_pin variable if necessary).
