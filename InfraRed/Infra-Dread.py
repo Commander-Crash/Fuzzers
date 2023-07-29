@@ -1,5 +1,8 @@
+#!/usr/bin/env python3
+
 # By Commander Crash of 29A Society
-# Infra Dread v0.3
+# Infra Dread v1.0
+
 import random
 import time
 import argparse
@@ -182,4 +185,3 @@ if __name__ == "__main__":
 
     pwm.stop()
     GPIO.cleanup()
-
