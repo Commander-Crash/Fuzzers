@@ -6,18 +6,15 @@
 import random
 import time
 import argparse
-import RPi.GPIO as GPIO
-
-# Suppress GPIO warnings
-GPIO.setwarnings(False)
+import pigpio  # Import pigpio library
 
 RED = "\033[91m"  # Red color
 GREEN = "\033[92m"  # Green color
+YELLOW = "\033[93m"  # Yellow color
 WHITE = "\033[0m"  # White color (reset)
 
 # Message of the Day (motd) in red
 motd = f"""{RED}
-
   _____        __                  _____                     _ 
  |_   _|      / _|                |  __ \                   | |
    | |  _ __ | |_ _ __ __ _ ______| |  | |_ __ ___  __ _  __| |
@@ -25,40 +22,42 @@ motd = f"""{RED}
   _| |_| | | | | | | | (_| |      | |__| | | |  __/ (_| | (_| |
  |_____|_| |_|_| |_|  \__,_|      |_____/|_|  \___|\__,_|\__,_|
                                                                
+
 {WHITE}"""
 print(motd)
 
-GPIO.setmode(GPIO.BCM)
-transmit_pin = 17
-GPIO.setup(transmit_pin, GPIO.OUT)
+pi = pigpio.pi()  # Initialize pigpio
 
-def send_ir_code(code, code_length, header_pulse, header_space, one_pulse, one_space, zero_pulse, zero_space, ptrail, gap):
-    print(f"{GREEN}Sending IR code: 0x{code:0{code_length//4}X}{WHITE}")
+def send_ir_code(code, code_length, header_pulse, header_space, one_pulse, one_space, zero_pulse, zero_space, ptrail, gap, view_mode, pwm):
+    if view_mode == 'b':
+        print(f"{GREEN}Sending IR code (binary): {bin(code)}{WHITE}")
+    elif view_mode == 'h':
+        print(f"{GREEN}Sending IR code {YELLOW}(hex): 0x{code:0{code_length//4}X}{WHITE}")
 
-    def send_pulse_pwm(duration_us):
-        pwm.ChangeDutyCycle(duty_cycle)
+    def send_pulse_pwm(duration_us, pwm):
+        pi.hardware_PWM(pwm, args.frequency, 500000)  # Set duty cycle to 50%
         time.sleep(duration_us / 1000000.0)
-        pwm.ChangeDutyCycle(0)
+        pi.hardware_PWM(pwm, args.frequency, 0)
 
     def send_space(duration_us):
         time.sleep(duration_us / 1000000.0)
 
-    send_pulse_pwm(header_pulse)
+    send_pulse_pwm(header_pulse, pwm)
     send_space(header_space)
 
     for i in range(code_length):
         bit = (code >> (code_length - 1 - i)) & 1
         if bit == 1:
-            send_pulse_pwm(one_pulse)
+            send_pulse_pwm(one_pulse, pwm)
             send_space(one_space)
         else:
-            send_pulse_pwm(zero_pulse)
+            send_pulse_pwm(zero_pulse, pwm)
             send_space(zero_space)
 
-    send_pulse_pwm(ptrail)
+    send_pulse_pwm(ptrail, pwm)
     time.sleep(gap / 1000000.0)
 
-def count_up_from_hex(starting_code, preamble_code, preamble_length, header_pulse, header_space, one_pulse, one_space, zero_pulse, zero_space, ptrail, gap):
+def count_up_from_hex(starting_code, preamble_code, preamble_length, header_pulse, header_space, one_pulse, one_space, zero_pulse, zero_space, ptrail, gap, view_mode, pwm):
     code = int(starting_code, 16)
     code_length = len(bin(code)) - 2
     tried_codes = set()
@@ -69,7 +68,7 @@ def count_up_from_hex(starting_code, preamble_code, preamble_length, header_puls
             if code not in tried_codes:
                 send_preamble_and_code(preamble_code, code, preamble_length, code_length,
                                        header_pulse, header_space, one_pulse, one_space,
-                                       zero_pulse, zero_space, ptrail, gap)
+                                       zero_pulse, zero_space, ptrail, gap, view_mode, pwm)
                 time.sleep(0.2)
                 tried_codes.add(code)
 
@@ -79,13 +78,14 @@ def count_up_from_hex(starting_code, preamble_code, preamble_length, header_puls
     except KeyboardInterrupt:
         print("\nExiting the script.")
 
-def send_preamble_and_code(preamble_code, code, preamble_length, code_length, header_pulse, header_space, one_pulse, one_space, zero_pulse, zero_space, ptrail, gap):
+def send_preamble_and_code(preamble_code, code, preamble_length, code_length, header_pulse, header_space, one_pulse, one_space, zero_pulse, zero_space, ptrail, gap, view_mode, pwm):
     if preamble_code is not None:
-        send_ir_code(preamble_code, preamble_length, header_pulse, header_space, one_pulse, one_space, zero_pulse, zero_space, ptrail, gap)
-    send_ir_code(code, code_length, header_pulse, header_space, one_pulse, one_space, zero_pulse, zero_space, ptrail, gap)
+        send_ir_code(preamble_code, preamble_length, header_pulse, header_space, one_pulse, one_space, zero_pulse, zero_space, ptrail, gap, view_mode, pwm)
+    send_ir_code(code, code_length, header_pulse, header_space, one_pulse, one_space, zero_pulse, zero_space, ptrail, gap, view_mode, pwm)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Send IR codes in sequence, random, or count-up mode.")
+    parser.add_argument("--gpio", type=int, default=18, help="GPIO pin number (default: 18).")
     parser.add_argument("-l", "--length", type=int, default=32, help="Number of bits for the IR codes (default: 32).")
     parser.add_argument("-r", "--random", action="store_true", help="Enable random mode (default is counting-up).")
     parser.add_argument("-m", "--code", type=str, help="IR code to send in hex format (e.g., 0x02A1).")
@@ -102,13 +102,17 @@ if __name__ == "__main__":
     parser.add_argument("--frequency", type=int, default=38000, help="Carrier frequency (Hz, default: 38000).")
     parser.add_argument("--duty", type=float, default=50.0, help="Duty cycle for the PWM signal (default: 50.0).")
     parser.add_argument("-sl", "--start_from", type=str, help="Start counting up from the specified hex code.")
+    parser.add_argument("-v", "--view", type=str, choices=['b', 'h'], default='h', help="Output view mode: 'b' for binary, 'h' for hex (default: 'h').")
     args = parser.parse_args()
+
+    transmit_pin = args.gpio
+
+    pi.set_mode(transmit_pin, pigpio.OUTPUT)
 
     pwm_frequency = args.frequency  # Assign the frequency from the arguments
     duty_cycle = args.duty  # Assign the duty cycle from the arguments
 
-    pwm = GPIO.PWM(transmit_pin, pwm_frequency)
-    pwm.start(duty_cycle)
+    pi.hardware_PWM(transmit_pin, pwm_frequency, int(duty_cycle * 10000))  # Set initial duty cycle
 
     repetition_counter = 0
 
@@ -121,12 +125,12 @@ if __name__ == "__main__":
                 preamble_length = len(bin(preamble_code)) - 2
                 count_up_from_hex(args.start_from, preamble_code, preamble_length,
                                   args.header_pulse, args.header_space, args.one_pulse, args.one_space,
-                                  args.zero_pulse, args.zero_space, args.ptrail, args.gap)
+                                  args.zero_pulse, args.zero_space, args.ptrail, args.gap, args.view, transmit_pin)
             else:
-                print("Warning: -sl is specified without -p. The preamble will be ignored.")
+                print("Notice: -sl is specified without -p. The preamble will be ignored.")
                 count_up_from_hex(args.start_from, None, None,
                                   args.header_pulse, args.header_space, args.one_pulse, args.one_space,
-                                  args.zero_pulse, args.zero_space, args.ptrail, args.gap)
+                                  args.zero_pulse, args.zero_space, args.ptrail, args.gap, args.view, transmit_pin)
     else:
         if args.code:
             code = int(args.code, 16)
@@ -136,10 +140,10 @@ if __name__ == "__main__":
                     if args.preamble:
                         send_preamble_and_code(int(args.preamble, 16), code, len(bin(args.length)) - 2, args.length,
                                                args.header_pulse, args.header_space, args.one_pulse, args.one_space,
-                                               args.zero_pulse, args.zero_space, args.ptrail, args.gap)
+                                               args.zero_pulse, args.zero_space, args.ptrail, args.gap, args.view, transmit_pin)
                     else:
                         send_ir_code(code, code_length, args.header_pulse, args.header_space, args.one_pulse, args.one_space,
-                                     args.zero_pulse, args.zero_space, args.ptrail, args.gap)
+                                     args.zero_pulse, args.zero_space, args.ptrail, args.gap, args.view, transmit_pin)
                     time.sleep(0.2)
                     repetition_counter += 1  # Increment the repetition counter for finite repetitions
             except KeyboardInterrupt:
@@ -157,10 +161,10 @@ if __name__ == "__main__":
                                 if args.preamble:
                                     send_preamble_and_code(int(args.preamble, 16), code, len(bin(args.length)) - 2, args.length,
                                                            args.header_pulse, args.header_space, args.one_pulse, args.one_space,
-                                                           args.zero_pulse, args.zero_space, args.ptrail, args.gap)
+                                                           args.zero_pulse, args.zero_space, args.ptrail, args.gap, args.view, transmit_pin)
                                 else:
                                     send_ir_code(code, args.length, args.header_pulse, args.header_space, args.one_pulse,
-                                                 args.one_space, args.zero_pulse, args.zero_space, args.ptrail, args.gap)
+                                                 args.one_space, args.zero_pulse, args.zero_space, args.ptrail, args.gap, args.view, transmit_pin)
                                 time.sleep(0.2)
                                 repetition_counter += 1  # Increment the repetition counter for finite repetitions
                             tried_codes.add(code)
@@ -174,14 +178,14 @@ if __name__ == "__main__":
                             if args.preamble:
                                 send_preamble_and_code(int(args.preamble, 16), i, len(bin(args.length)) - 2, args.length,
                                                        args.header_pulse, args.header_space, args.one_pulse, args.one_space,
-                                                       args.zero_pulse, args.zero_space, args.ptrail, args.gap)
+                                                       args.zero_pulse, args.zero_space, args.ptrail, args.gap, args.view, transmit_pin)
                             else:
                                 send_ir_code(i, args.length, args.header_pulse, args.header_space, args.one_pulse, args.one_space,
-                                             args.zero_pulse, args.zero_space, args.ptrail, args.gap)
+                                             args.zero_pulse, args.zero_space, args.ptrail, args.gap, args.view, transmit_pin)
                             time.sleep(0.2)
                             repetition_counter += 1  # Increment the repetition counter for finite repetitions
             except KeyboardInterrupt:
                 print("\nExiting the script.")
 
-    pwm.stop()
-    GPIO.cleanup()
+    pi.set_mode(transmit_pin, pigpio.INPUT)  # Set GPIO pin back to INPUT
+    pi.stop()  # Stop pigpio
