@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Infra Dread v1.3(PIGPIO)
+# Infra Dread v1.4 (PIGPIO)
 # By Commander Crash of 29A Society
 
 import pigpio
@@ -140,7 +140,6 @@ def random_mode(preamble_code, preamble_length, code_length, header_pulse, heade
         print("\nExiting the script.")
     finally:
         pi.stop()
-
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Send and receive IR codes.")
     parser.add_argument("--gpio", type=int, default=18, help="GPIO pin number for sending IR (default: 18).")
@@ -161,9 +160,9 @@ def parse_arguments():
     parser.add_argument("--frequency", type=int, default=38000, help="Carrier frequency (Hz, default: 38000).")
     parser.add_argument("--duty", type=float, default=50.0, help="Duty cycle for the PWM signal (default: 50.0).")
     parser.add_argument("-sl", "--start_from", type=str, help="Start counting up from the specified hex code.")
-    parser.add_argument("-v", "--view", type=str, choices=['b', 'h'], default='h', help="Output view mode: 'b' for binary, 'h' for hex (default: 'h').")
+    parser.add_argument("-v", "--view_mode", choices=['b', 'h'], default='h', help="View mode: binary ('b') or hexadecimal ('h').")
     parser.add_argument("--receive", action="store_true", help="Enable receiving mode to capture IR signals.")
-    parser.add_argument("--test", action="store_true", help="Run test mode.")
+    parser.add_argument("--replay", action="store_true", help="Enable replay mode to capture and resend an IR signal.")
     return parser.parse_args()
 
 class IRReceiver:
@@ -262,90 +261,89 @@ def analyze_signal(received_signals):
         "bit_count": bit_count
     }
 
-
-def test_mode(pi, gpio_tx, gpio_rx, frequency, tolerance=120):
-    test_params = [
-        {"header_pulse": 9000, "header_space": 4000},
-        {"header_pulse": 8000, "header_space": 3000},
-        {"header_pulse": 2000, "header_space": 2000}
-    ]
-    one_pulse = 550
-    one_space = 1620
-    zero_pulse = 650
-    zero_space = 600
-    ptrail = 666
-    gap = 66612
-    code = 0x1  # Simple test code
-    code_length = 32
-
-    for params in test_params:
-        send_ir_signal(pi, gpio_tx, frequency, code, code_length, 
-                       params["header_pulse"], params["header_space"], 
-                       one_pulse, one_space, zero_pulse, zero_space, 
-                       ptrail, gap, 'h')
-        time.sleep(1)  # Give time to receive the signal
-
-    received_signals = receive_ir_signal(pi, gpio_rx)
-
-    signal_params = analyze_signal(received_signals)
-
-    def check_tolerance(sent, received, tolerance):
-        return abs(sent - received) <= tolerance
-
-    for i, params in enumerate(test_params):
-        if not check_tolerance(params["header_pulse"], signal_params["header_pulse"], tolerance):
-            print(f"{RED}Test {i+1} Failed: Header pulse mismatch (Sent: {params['header_pulse']}, Received: {signal_params['header_pulse']}){WHITE}")
-        if not check_tolerance(params["header_space"], signal_params["header_space"], tolerance):
-            print(f"{RED}Test {i+1} Failed: Header space mismatch (Sent: {params['header_space']}, Received: {signal_params['header_space']}){WHITE}")
-
-    pi.stop()
-
 def main():
     args = parse_arguments()
     pi = initialize_gpio(args.gpio, args.frequency, args.duty)
-
-    if args.test:
-        if not args.recv_gpio:
-            print(f"{RED}Error: You must specify a GPIO pin for receiving IR with --recv_gpio.{WHITE}")
-            sys.exit(1)
-        
-        test_mode(pi, args.gpio, args.recv_gpio, args.frequency)
-        sys.exit(0)
 
     if args.receive:
         if not args.recv_gpio:
             print(f"{RED}Error: You must specify a GPIO pin for receiving IR with --recv_gpio.{WHITE}")
             sys.exit(1)
-        
+
         received_signals = receive_ir_signal(pi, args.recv_gpio)
-        
+
         if not received_signals:
             print(f"{RED}Error: No signals received. Ensure the IR receiver is connected and a signal is being sent.{WHITE}")
             pi.stop()
             sys.exit(1)
-        
+
         signal_params = analyze_signal(received_signals)
         
         print(f"{GREEN}Extracted Signal Parameters:{WHITE}")
         for key, value in signal_params.items():
             print(f"{key}: {value} microseconds")
-
         pi.stop()
         sys.exit(0)
 
     preamble_code = int(args.preamble, 16) if args.preamble else None
     preamble_length = len(bin(preamble_code)) - 2 if preamble_code else 0
 
-    repeat = args.repeat
 
-    if args.code:
-        send_fixed_code(preamble_code, preamble_length, int(args.code, 16), args.length, args.header_pulse, args.header_space, args.one_pulse, args.one_space, args.zero_pulse, args.zero_space, args.ptrail, args.gap, args.view, pi, args.gpio, args.frequency, repeat)
-    elif args.random:
-        random_mode(preamble_code, preamble_length, args.length, args.header_pulse, args.header_space, args.one_pulse, args.one_space, args.zero_pulse, args.zero_space, args.ptrail, args.gap, args.view, pi, args.gpio, args.frequency, repeat)
-    elif args.start_from:
-        count_up_from_hex_starting(args.start_from, preamble_code, preamble_length, args.length, args.header_pulse, args.header_space, args.one_pulse, args.one_space, args.zero_pulse, args.zero_space, args.ptrail, args.gap, args.view, pi, args.gpio, args.frequency, repeat)
+    gpio_pin = args.gpio
+    frequency = 38000
+    duty_cycle = 128
+
+    pi = initialize_gpio(gpio_pin, frequency, duty_cycle)
+
+    preamble_code = int(args.preamble, 16) if args.preamble else None
+    preamble_length = len(args.preamble) * 4 if args.preamble else 0
+
+    if args.replay:
+        if not args.recv_gpio:
+            print("Error: --recv_gpio must be specified when using --replay.")
+            return
+
+        recv_gpio = args.recv_gpio
+        ir_codes = []
+
+        def callback(gpio, level, tick):
+            nonlocal ir_codes
+            if level == 1:  # Rising edge
+                ir_codes.append(tick)
+
+        cb = pi.callback(recv_gpio, pigpio.EITHER_EDGE, callback)
+        
+        print("Recording IR signal... Press Ctrl+C to stop.")
+        try:
+            while True:
+                time.sleep(1)
+        except KeyboardInterrupt:
+            pass
+
+        cb.cancel()
+
+        if len(ir_codes) < 2:
+            print("Failed to capture a valid IR signal.")
+            return
+
+        intervals = [ir_codes[i] - ir_codes[i - 1] for i in range(1, len(ir_codes))]
+        most_common_interval = Counter(intervals).most_common(1)[0][0]
+
+        print(f"Captured {len(ir_codes)} edges with most common interval: {most_common_interval} us")
+        bit_length = int(input("Enter the bit length of the signal: "))
+        replay_mode = input("Enter replay mode ('r' for random or 'c' for count up): ")
+
+        if replay_mode == 'r':
+            random_mode(None, 0, bit_length, args.header_pulse, args.header_space, args.one_pulse, args.one_space, args.zero_pulse, args.zero_space, args.ptrail, args.gap, args.view_mode, pi, gpio_pin, frequency, args.repeat)
+        elif replay_mode == 'c':
+            count_up_from_zero(None, 0, bit_length, args.header_pulse, args.header_space, args.one_pulse, args.one_space, args.zero_pulse, args.zero_space, args.ptrail, args.gap, args.view_mode, pi, gpio_pin, frequency, args.repeat)
     else:
-        count_up_from_zero(preamble_code, preamble_length, args.length, args.header_pulse, args.header_space, args.one_pulse, args.one_space, args.zero_pulse, args.zero_space, args.ptrail, args.gap, args.view, pi, args.gpio, args.frequency, repeat)
+        if args.random:
+            random_mode(preamble_code, preamble_length, args.length, args.header_pulse, args.header_space, args.one_pulse, args.one_space, args.zero_pulse, args.zero_space, args.ptrail, args.gap, args.view_mode, pi, gpio_pin, frequency, args.repeat)
+        elif args.code:
+            send_fixed_code(preamble_code, preamble_length, int(args.code, 16), args.length, args.header_pulse, args.header_space, args.one_pulse, args.one_space, args.zero_pulse, args.zero_space, args.ptrail, args.gap, args.view_mode, pi, gpio_pin, frequency, args.repeat)
+        else:
+            count_up_from_zero(preamble_code, preamble_length, args.length, args.header_pulse, args.header_space, args.one_pulse, args.one_space, args.zero_pulse, args.zero_space, args.ptrail, args.gap, args.view_mode, pi, gpio_pin, frequency, args.repeat)
 
     pi.stop()
 
