@@ -24,7 +24,7 @@ Run the Script:
 
 Command Line Arguments:
 ```
-infra-dread --help
+infra-dread  --help
 
   _____        __                  _____                     _
  |_   _|      / _|                |  __ \                   | |
@@ -34,14 +34,9 @@ infra-dread --help
  |_____|_| |_|_| |_|  \__,_|      |_____/|_|  \___|\__,_|\__,_|
 
 
-usage: infra-dread [-h] [--gpio GPIO] [--recv_gpio RECV_GPIO] [-l LENGTH] [-r]
-                   [-m CODE] [-p PREAMBLE] [-x REPEAT]
-                   [--header_pulse HEADER_PULSE] [--header_space HEADER_SPACE]
-                   [--one_pulse ONE_PULSE] [--one_space ONE_SPACE]
-                   [--zero_pulse ZERO_PULSE] [--zero_space ZERO_SPACE]
-                   [--ptrail PTRAIL] [--gap GAP] [--frequency FREQUENCY]
-                   [--duty DUTY] [-sl START_FROM] [-v {b,h}] [--receive]
-                   [--test]
+usage: infra-dread [-h] [--gpio GPIO] [--recv_gpio RECV_GPIO] [-l LENGTH] [-r] [-m CODE] [-p PREAMBLE] [-x REPEAT] [--header_pulse HEADER_PULSE] [--header_space HEADER_SPACE]
+                   [--one_pulse ONE_PULSE] [--one_space ONE_SPACE] [--zero_pulse ZERO_PULSE] [--zero_space ZERO_SPACE] [--ptrail PTRAIL] [--gap GAP] [--frequency FREQUENCY] [--duty DUTY]
+                   [-sl START_FROM] [-v {b,h}] [--receive] [--replay]
 
 Send and receive IR codes.
 
@@ -55,11 +50,9 @@ optional arguments:
   -r, --random          Enable random mode (default is counting-up).
   -m CODE, --code CODE  IR code to send in hex format (e.g., 0x02A1).
   -p PREAMBLE, --preamble PREAMBLE
-                        Fixed preamble IR code to send in hex format (e.g.,
-                        0x7FFFF).
+                        Fixed preamble IR code to send in hex format (e.g., 0x7FFFF).
   -x REPEAT, --repeat REPEAT
-                        Number of times to repeat sending the code (default:
-                        1).
+                        Number of times to repeat sending the code (default: 1).
   --header_pulse HEADER_PULSE
                         Header pulse duration (microseconds, default: 4058).
   --header_space HEADER_SPACE
@@ -79,11 +72,10 @@ optional arguments:
   --duty DUTY           Duty cycle for the PWM signal (default: 50.0).
   -sl START_FROM, --start_from START_FROM
                         Start counting up from the specified hex code.
-  -v {b,h}, --view {b,h}
-                        Output view mode: 'b' for binary, 'h' for hex
-                        (default: 'h').
+  -v {b,h}, --view_mode {b,h}
+                        View mode: binary ('b') or hexadecimal ('h').
   --receive             Enable receiving mode to capture IR signals.
-  --test                Run test mode
+  --replay              Enable replay mode to capture and resend an IR signal.
 ```
 
 
