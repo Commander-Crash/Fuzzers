@@ -42,7 +42,7 @@ def send_ir_signal(pi, gpio, frequency, code, code_length, header_pulse, header_
     def send_pulse(duration_us):
         pi.hardware_PWM(gpio, frequency, 500000)  # 50% duty cycle
         time.sleep(duration_us / 1_000_000.0)
-        pi.hardware_PWM(gpio, frequency, 0)  # turn off
+        pi.hardware_PWM(gpio, 0, 0)  # turn off
 
     def send_space(duration_us):
         time.sleep(duration_us / 1_000_000.0)
@@ -140,6 +140,7 @@ def random_mode(preamble_code, preamble_length, code_length, header_pulse, heade
         print("\nExiting the script.")
     finally:
         pi.stop()
+
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Send and receive IR codes.")
     parser.add_argument("--gpio", type=int, default=18, help="GPIO pin number for sending IR (default: 18).")
@@ -158,7 +159,7 @@ def parse_arguments():
     parser.add_argument("--ptrail", type=int, default=514, help="Pulse trail duration (microseconds, default: 514).")
     parser.add_argument("--gap", type=int, default=64729, help="Gap duration (microseconds, default: 64729).")
     parser.add_argument("--frequency", type=int, default=38000, help="Carrier frequency (Hz, default: 38000).")
-    parser.add_argument("--duty", type=float, default=50.0, help="Duty cycle for the PWM signal (default: 50.0).")
+    parser.add_argument("--duty", type=float, default=50, help="Duty cycle for the PWM signal (default:50).")
     parser.add_argument("-sl", "--starting_code", type=str, help="Start counting up from the specified hex code.")
     parser.add_argument("-v", "--view_mode", choices=['b', 'h'], default='h', help="View mode: binary ('b') or hexadecimal ('h').")
     parser.add_argument("--receive", action="store_true", help="Enable receiving mode to capture IR signals.")
